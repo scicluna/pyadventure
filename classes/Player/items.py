@@ -1,9 +1,12 @@
-from classes.Player.player import Player
-from classes.Player.status_effects import StatusEffect
+from __future__ import annotations
+from typing import TYPE_CHECKING
+if TYPE_CHECKING:
+    from classes.Player.player import Player
+    from classes.Player.status_effects import StatusEffect
 
 
 class Item:
-    def __init__(self, name, stackable=False, description="", value=0):
+    def __init__(self, name, stackable=False, description="", gold_cost=0, count=1):
         """
         Base class for all items.
         :param name: Name of the item.
@@ -12,9 +15,10 @@ class Item:
         :param value: The item's monetary value.
         """
         self.name = name
+        self.count = count
         self.stackable = stackable
         self.description = description
-        self.value = value
+        self.gold_cost = gold_cost
 
     def is_usable(self, player):
         """
@@ -22,7 +26,7 @@ class Item:
         The base implementation always returns True.
         Subclasses should override this with specific conditions.
         """
-        return True
+        return False
 
     def use_item(self, target):
         """
@@ -32,19 +36,19 @@ class Item:
         print(f"{self.name} cannot be used directly.")
 
     def __repr__(self):
-        return f"Item({self.name}, stackable={self.stackable}, value={self.value})"
+        return f"Item({self.name}, stackable={self.stackable}, value={self.gold_cost})"
 
 #########################################################################################
 
 class Consumable(Item):
-    def __init__(self, name, description, value, effect_type, effect_value=0, status_effect=None):
+    def __init__(self, name, description, gold_cost, effect_type, effect_value=0, status_effect=None):
         """
         Consumable items with diverse effects.
         :param effect_type: The type of effect ("restore_hp", "restore_mp", "remove_status", "apply_status").
         :param effect_value: The magnitude of the effect (e.g., amount of HP restored).
         :param status_effect: A StatusEffect object to apply, if applicable.
         """
-        super().__init__(name, stackable=True, description=description, value=value)
+        super().__init__(name, stackable=True, description=description, gold_cost=gold_cost)
         self.effect_type:str = effect_type  # "restore_hp", "restore_mp", etc.
         self.effect_value:int = effect_value
         self.status_effect:StatusEffect = status_effect
@@ -55,11 +59,11 @@ class Consumable(Item):
         :param player: The player using the item.
         """
         if self.effect_type == "restore_hp":
-            player.modify_hp(self.effect_value)
-            print(f"{self.name} restored {self.effect_value} HP to {player.name}.")
+            player.stats.modify_hp(self.effect_value)
+            print(f"{self.name} restored {self.effect_value} HP")
         elif self.effect_type == "restore_mp":
-            player.modify_mp(self.effect_value)
-            print(f"{self.name} restored {self.effect_value} MP to {player.name}.")
+            player.stats.modify_mp(self.effect_value)
+            print(f"{self.name} restored {self.effect_value} MP")
         elif self.effect_type == "remove_status" and self.status_effect:
             if player.stats.status_manager.has_effect(self.status_effect.name):
                 effect_to_remove = next(
@@ -68,7 +72,7 @@ class Consumable(Item):
                 if effect_to_remove: 
                     effect_to_remove.remove_effect(player)
                     player.stats.status_manager.effects.remove(effect_to_remove)
-                    print(f"{self.name} removed {effect_to_remove.name} from {player.name}.")
+                    print(f"{self.name} removed {effect_to_remove.name}.")
             else:
                 print(f"{self.name} had no effect. {player.name} does not have {self.status_effect.name}.")
         elif self.effect_type == "apply_status" and self.status_effect:
@@ -83,9 +87,9 @@ class Consumable(Item):
         :param player: The entity the item is used on.
         :return: True if the item can be used, otherwise False.
         """
-        if self.effect_type == "restore_hp" and player.hp >= player.max_hp:
+        if self.effect_type == "restore_hp" and player.stats.hp >= player.stats.max_hp:
             return False  # Cannot use if HP is full
-        if self.effect_type == "restore_mp" and player.mp >= player.max_mp:
+        if self.effect_type == "restore_mp" and player.stats.mp >= player.stats.max_mp:
             return False  # Cannot use if MP is full
         if self.effect_type == "remove_status" and self.status_effect:
             return player.stats.status_manager.has_effect(self.status_effect.name)
@@ -93,12 +97,12 @@ class Consumable(Item):
     
 #########################################################################################
 class PlotItem(Item):
-    def __init__(self, name, description, value, quest_name):
+    def __init__(self, name, description, gold_cost, quest_name):
         """
         Plot items, usually for quests or story progression.
         :param quest_name: The name of the quest this item is tied to.
         """
-        super().__init__(name, stackable=False, description=description, value=value)
+        super().__init__(name, stackable=False, description=description, gold_cost=gold_cost)
         self.quest_name = quest_name
 
     def use_item(self, target):
@@ -116,31 +120,41 @@ class PlotItem(Item):
 
 #########################################################################################
 class Equipment(Item):
-    def __init__(self, name, description, value, slot, stats):
+    def __init__(self, name, description, gold_cost, slot, stats, required_stats=None):
         """
         Equipment items like weapons or armor.
         :param slot: The equipment slot (e.g., "weapon", "armor").
         :param stats: A dictionary of stat modifiers (e.g., {"strength": 5, "agility": 2}).
+        :param required_stats: Minimum stats required to equip the item (e.g., {"strength": 10}).
         """
-        super().__init__(name, stackable=False, description=description, value=value)
-        self.slot = slot  # "weapon", "armor", etc.
-        self.stats = stats  # Stat modifiers
+        super().__init__(name, stackable=False, description=description, gold_cost=gold_cost)
+        self.slot = slot
+        self.stats = stats or {}  # Default to an empty dict if not provided
+        self.required_stats = required_stats or {}  # Default to an empty dict if not provided
 
-    def equip(self, target):
+    def is_usable(self, player: Player)->bool:
         """
-        Equip the item, applying its stat bonuses to the target.
-        :param target: The entity equipping the item.
+        Determine if the item is usable (equippable) by checking required stats.
+        :param player: The player attempting to equip the item.
+        :return: True if the player meets the required stats, otherwise False.
         """
-        for stat, value in self.stats.items():
-            target.modify_stat(stat, value)
-        print(f"{target.name} equipped {self.name}, gaining {self.stats}.")
+        for stat, required_value in self.required_stats.items():
+            if getattr(player.stats, stat, 0) < required_value:
+                print(f"Cannot equip {self.name}. {stat.capitalize()} {required_value} required.")
+                return False
+        return True
 
-    def unequip(self, target):
+    def use_item(self, player:Player):
         """
-        Unequip the item, removing its stat bonuses from the target.
-        :param target: The entity unequipping the item.
+        Attempt to equip the item to the proper slot.
+        :param player: The player attempting to equip the item.
         """
-        for stat, value in self.stats.items():
-            target.modify_stat(stat, -value)
-        print(f"{target.name} unequipped {self.name}, losing {self.stats}.")
+        if not self.is_usable(player):
+            print(f"{self.name} cannot be equipped due to insufficient stats.")
+            return
 
+        # Attempt to equip the item via the EquipmentManager
+        if player.equipment_manager:
+            player.equipment_manager.equip(self)
+        else:
+            print(f"{player.name} does not have an EquipmentManager.")

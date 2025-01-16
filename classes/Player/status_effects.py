@@ -1,8 +1,11 @@
-from classes.Player.stats import Stats
+from __future__ import annotations
+from typing import TYPE_CHECKING
+if TYPE_CHECKING:
+    from classes.Player.stats import Stats
 
 
 class StatusEffect:
-    def __init__(self, name, stat, value, duration, damage_per_day=0):
+    def __init__(self, name, stat, value, duration):
         """
         A status effect that affects stats or deals damage over time.
         
@@ -16,7 +19,6 @@ class StatusEffect:
         self.stat: str = stat
         self.value: int = value
         self.duration: int = duration
-        self.damage_per_day: int = damage_per_day
 
     def is_expired(self):
         """Check if the status effect has expired."""
@@ -69,7 +71,9 @@ class StatusManager:
                 print(f"Refreshed {effect.name} duration to {existing_effect.duration} day(s).")
         else:
             # Add the new effect if none exists
-            effect.apply_effect(stats)
+            if effect.stat != 'hp':
+                effect.apply_effect(stats)
+                
             self.effects.append(effect)
             print(f"Applied {effect.name} for {effect.duration} day(s).")
 
@@ -84,9 +88,9 @@ class StatusManager:
 
         for effect in self.effects:
             # Apply daily damage, if any
-            if effect.damage_per_day > 0:
-                stats.modify_hp(-effect.damage_per_day)
-                print(f"{effect.name} dealt {effect.damage_per_day} damage.")
+            if effect.stat == 'hp' and abs(effect.value) > 0:
+                stats.modify_hp(effect.value)
+                print(f"{effect.name} dealt {effect.value} damage.")
 
             # Reduce duration
             effect.tick()

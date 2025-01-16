@@ -1,3 +1,4 @@
+from __future__ import annotations
 from classes.Player.status_effects import StatusManager
 
 class Stats:
@@ -14,8 +15,12 @@ class Stats:
         self.exp:int = 0
         self.exp_to_next_level:int = self.calculate_exp_to_next_level()
 
-        # Derived stats
-        self.recalculate_derived_stats()
+        # Initialize Derived stats
+        self.max_hp = self.calculate_hp()
+        self.max_mp = self.calculate_mana()
+        self.hit = self.calculate_hit()
+        self.damage = self.calculate_damage()
+        self.ac = self.calculate_ac()
         
         # Temporary stats
         self.hp:int = self.max_hp
@@ -77,13 +82,18 @@ class Stats:
         """Check if a stat meets a required value."""
         return getattr(self, stat) >= required_value
 
-    def modify_stat(self, stat:str, value:int)->None:
-        """Modify an explicit stat and update derived stats."""
-        if hasattr(self, stat):
-            setattr(self, stat, getattr(self, stat) + value)
-            self.recalculate_derived_stats()
-        else:
-            print(f"Stat '{stat}' not found.")
+    def modify_stat(self, stats: dict[str, int]) -> None:
+        """
+        Modify explicit stats and update derived stats.
+        :param stats: A dictionary where keys are stat names and values are the amounts to modify.
+        """
+        for stat, value in stats.items():
+            if hasattr(self, stat):
+                setattr(self, stat, getattr(self, stat) + value)
+            else:
+                print(f"Stat '{stat}' not found.")
+        # Recalculate derived stats after all modifications
+        self.recalculate_derived_stats()
 
     def advance_day(self, days:int=1)->None:
         """Advance the in-game day by the specified number of days."""
@@ -119,3 +129,7 @@ class Stats:
         # Ensure temporary stats like HP/MP are still within their bounds
         self.hp = min(self.hp, self.max_hp)
         self.mp = min(self.mp, self.max_mp)
+
+    def show_stats(self)->str:
+        """Display the player's current stats."""
+        return f"Stats: HP={self.hp}/{self.max_hp}, MP={self.mp}/{self.max_mp}, Level={self.level}, EXP={self.exp}/{self.exp_to_next_level}, Day={self.day}"

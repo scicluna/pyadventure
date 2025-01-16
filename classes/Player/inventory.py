@@ -1,5 +1,9 @@
-from classes.Player.items import Item
-from classes.Player.player import Player
+from __future__ import annotations
+import copy
+from typing import TYPE_CHECKING
+if TYPE_CHECKING:
+    from classes.Player.items import Item
+    from classes.Player.player import Player
 
 
 class Inventory:
@@ -7,11 +11,12 @@ class Inventory:
         """Initialize an empty inventory."""
         self.items: list[Item] = []
 
-    def add_item(self, item:Item, count:int=1)->None:
+    def add_item(self, item:Item, count:int=1, index:int=None)->None:
         """
         Add an item to the inventory. Stack if possible.
         :param item: The item to add.
         :param count: The quantity to add (for stackable items).
+        :param index: The index at which to insert the item (optional).
         """
         if item.stackable:
             # Look for an existing stack of the same item
@@ -26,14 +31,20 @@ class Inventory:
                         if count <= 0:
                             return
             # If there's remaining count, add a new stack
+            new_item = copy.deepcopy(item)
             if count > 0:
-                item.count = count
-                self.items.append(item)
-                print(f"Created a new stack of {item.name} with {count}.")
+                new_item.count = count
+                if index is not None:
+                    self.items.insert(index, new_item)
+                else:
+                    self.items.append(new_item)
+                    print(f"Created a new stack of {item.name} with {count}.")
         else:
-            # Add non-stackable items directly
             for _ in range(count):
-                self.items.append(item)
+                if index is not None:
+                    self.items.insert(index, item)
+                else:
+                    self.items.append(item)
                 print(f"Added {item.name} to the inventory.")
 
     def remove_item(self, identifier, count=1):
@@ -58,28 +69,48 @@ class Inventory:
             else:
                 print("Invalid inventory slot.")
         elif isinstance(identifier, str):  # Name-based removal
-            for item in self.items:
+            remaining_to_remove = count
+            # Iterate through all items matching the name
+            for item in sorted(self.items, key=lambda x: x.count):
                 if item.name == identifier:
                     if item.stackable:
-                        if item.count > count:
-                            item.count -= count
-                            print(f"Removed {count} {item.name}(s). Remaining: {item.count}.")
-                            return
+                        if item.count > remaining_to_remove:
+                            item.count -= remaining_to_remove
+                            print(f"Removed {remaining_to_remove} {item.name}(s). Remaining: {item.count}.")
+                            return  # All required items removed
                         else:
                             print(f"Removed the entire stack of {item.name}.")
-                            self.items.remove(item)
-                            return
+                            remaining_to_remove -= item.count
+                            self.items.remove(item)  # Remove depleted stack
+                            if remaining_to_remove <= 0:
+                                return  # All required items removed
                     else:
                         print(f"Removed {item.name} from the inventory.")
                         self.items.remove(item)
-                        return
-            print(f"Item '{identifier}' not found in the inventory.")
+                        remaining_to_remove -= 1
+                        if remaining_to_remove <= 0:
+                            return  # All required items removed
+            # If we exhaust the loop and still have items to remove
+            if remaining_to_remove > 0:
+                print(f"Could not remove {count} {identifier}(s). Only removed {count - remaining_to_remove}.")
         else:
             print("Invalid identifier type. Must be an index or name.")
 
-    def check_item(self, required_item:str)->bool:
-        """Check if an item is present in the inventory."""
-        return any(item.name == required_item for item in self.items)
+    def check_item(self, required_item: str, quantity: int = 1, item_type: type = None) -> bool:
+        """
+        Check if an item is present in the inventory, optionally filtering by type and verifying quantity.
+        :param required_item: The name of the item to check.
+        :param quantity: The required quantity (default is 1).
+        :param item_type: The specific class type of the item (e.g., PlotItem).
+        :return: True if the item exists with the required quantity, otherwise False.
+        """
+        for item in self.items:
+            if item.name == required_item and (item_type is None or isinstance(item, item_type)):
+                if item.stackable and item.count >= quantity:
+                    return True
+                elif not item.stackable and quantity == 1:
+                    return True
+        return False
 
     def sort_items(self, key:function=None, reverse:bool=False)->list[Item]:
         """
@@ -122,7 +153,7 @@ class Inventory:
 
     def list_items(self)->list[str]:
         """List all items in the inventory."""
-        return [item.name for item in self.items]
+        return [(item.name, item.count) for item in self.items]
 
     def swap_items(self, index1:int, index2:int)->None:
         """
