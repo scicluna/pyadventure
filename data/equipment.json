@@ -1,0 +1,18 @@
+{
+    "Steel Sword": {
+        "description": "A sturdy steel sword.",
+        "gold_cost": 100,
+        "slot": "weapon",
+        "stats": {
+            "strength": 5
+        }
+    },
+    "Iron Shield": {
+        "description": "A sturdy iron shield.",
+        "gold_cost": 80,
+        "slot": "shield",
+        "stats": {
+            "stamina": 5
+        }
+    }
+}

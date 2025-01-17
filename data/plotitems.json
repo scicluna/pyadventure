@@ -1,0 +1,10 @@
+{
+    "Ancient Amulet": {
+        "description": "A mysterious amulet of unknown origin.",
+        "gold_cost": 0
+    },
+    "Golden Key": {
+        "description": "A shiny key with an intricate design.",
+        "gold_cost": 0
+    }
+}

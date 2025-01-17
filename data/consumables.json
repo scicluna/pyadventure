@@ -1,0 +1,14 @@
+{
+    "Health Potion": {
+        "description": "Restores 50 HP.",
+        "gold_cost": 10,
+        "effect_type": "restore_hp",
+        "effect_value": 50
+    },
+    "Mana Potion": {
+        "description": "Restores 50 MP.",
+        "gold_cost": 12,
+        "effect_type": "restore_mp",
+        "effect_value": 50
+    }
+}

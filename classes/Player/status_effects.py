@@ -24,15 +24,22 @@ class StatusEffect:
         """Check if the status effect has expired."""
         return self.duration <= 0
 
-    def apply_effect(self, stats: Stats)->None:
+    def apply_effect(self, stats: Stats) -> None:
         """Apply the effect's stat modification."""
-        if hasattr(stats, self.stat):
-            setattr(stats, self.stat, getattr(stats, self.stat) + self.value)
+        if self.stat in stats.explicit_stats:  # Check if the stat exists
+            stats.explicit_stats[self.stat] += self.value
+            stats.recalculate_derived_stats()  # Ensure derived stats are updated
+        else:
+            print(f"Stat '{self.stat}' not found in explicit stats.")
 
-    def remove_effect(self, stats: Stats)->None:
+    def remove_effect(self, stats: Stats) -> None:
         """Remove the effect's stat modification."""
-        if hasattr(stats, self.stat):
-            setattr(stats, self.stat, getattr(stats, self.stat) - self.value)
+        if self.stat in stats.explicit_stats:  # Check if the stat exists
+            stats.explicit_stats[self.stat] -= self.value
+            stats.recalculate_derived_stats()  # Ensure derived stats are updated
+        else:
+            print(f"Stat '{self.stat}' not found in explicit stats.")
+
 
     def tick(self)->None:
         """Reduce duration by one day."""

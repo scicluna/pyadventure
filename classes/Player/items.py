@@ -70,7 +70,7 @@ class Consumable(Item):
                     (e for e in player.stats.status_manager.effects if e.name == self.status_effect.name), None
                 )
                 if effect_to_remove: 
-                    effect_to_remove.remove_effect(player)
+                    effect_to_remove.remove_effect(player.stats)
                     player.stats.status_manager.effects.remove(effect_to_remove)
                     print(f"{self.name} removed {effect_to_remove.name}.")
             else:
@@ -87,9 +87,9 @@ class Consumable(Item):
         :param player: The entity the item is used on.
         :return: True if the item can be used, otherwise False.
         """
-        if self.effect_type == "restore_hp" and player.stats.hp >= player.stats.max_hp:
+        if self.effect_type == "restore_hp" and player.stats.resources["hp"] >= player.stats.derived_stats["max_hp"]:
             return False  # Cannot use if HP is full
-        if self.effect_type == "restore_mp" and player.stats.mp >= player.stats.max_mp:
+        if self.effect_type == "restore_mp" and player.stats.resources["mp"] >= player.stats["max_mp"]:
             return False  # Cannot use if MP is full
         if self.effect_type == "remove_status" and self.status_effect:
             return player.stats.status_manager.has_effect(self.status_effect.name)
@@ -139,8 +139,8 @@ class Equipment(Item):
         :return: True if the player meets the required stats, otherwise False.
         """
         for stat, required_value in self.required_stats.items():
-            if getattr(player.stats, stat, 0) < required_value:
-                print(f"Cannot equip {self.name}. {stat.capitalize()} {required_value} required.")
+            if player.stats.explicit_stats.get(stat, 0) < required_value:
+                print(f"Cannot equip {self.name}. {stat.capitalize()} {required_value} required. (current stat is {player.stats.explicit_stats.get(stat, 0)})")
                 return False
         return True
 

@@ -1,135 +1,181 @@
 from __future__ import annotations
+from typing import TypedDict
 from classes.Player.status_effects import StatusManager
 
+class ExplicitStats(TypedDict):
+    strength: int
+    agility: int
+    stamina: int
+    willpower: int
+    charisma: int
+    level: int
+    exp: int
+
+class DerivedStats(TypedDict):
+    exp_to_next_level: int
+    max_hp: int
+    max_mp: int
+    hit: int
+    damage: int
+    ac: int
+
+class Resources(TypedDict):
+    hp: int
+    mp: int
+
+class MetaInfo(TypedDict):
+    day: int
+    location: int
+
 class Stats:
-    def __init__(self, strength:int=10, agility:int=10, stamina:int=10, willpower:int=10, charisma:int=10, level:int=1):
+    def __init__(self, initial_explicit:dict[str,int]=None)->None:
+        """
+        Initialize stats using dictionaries for explicit and derived stats.
+        :param initial_explicit: A dictionary of initial explicit stats.
+        """
         # Explicit stats
-        self.strength = strength
-        self.agility = agility
-        self.stamina = stamina
-        self.willpower = willpower
-        self.charisma = charisma
-        self.level = level
+        self.explicit_stats: ExplicitStats  = initial_explicit or {
+            "strength": 10,
+            "agility": 10,
+            "stamina": 10,
+            "willpower": 10,
+            "charisma": 10,
+            "level": 1,
+            "exp": 0,
+        }
 
-        # Experience and derived stats
-        self.exp:int = 0
-        self.exp_to_next_level:int = self.calculate_exp_to_next_level()
+        # Derived stats (will be recalculated)
+        self.derived_stats: DerivedStats = {
+            "exp_to_next_level": 0,
+            "max_hp": self.calculate_hp(),
+            "max_mp": self.calculate_mana(),
+            "hit": 0,
+            "damage": 0,
+            "ac": 0,
+        }
 
-        # Initialize Derived stats
-        self.max_hp = self.calculate_hp()
-        self.max_mp = self.calculate_mana()
-        self.hit = self.calculate_hit()
-        self.damage = self.calculate_damage()
-        self.ac = self.calculate_ac()
-        
         # Temporary stats
-        self.hp:int = self.max_hp
-        self.mp:int = self.max_mp
+        self.resources: Resources = {
+            "hp": self.derived_stats["max_hp"],
+            "mp": self.derived_stats["max_mp"],
+        }
 
-        # Track days
-        self.day:float = 1
+        self.recalculate_derived_stats()
 
-        # Track status effects
+        # Other
+        self.meta_info: MetaInfo = {
+            "day": 1,
+            "location": 0
+        }
+
         self.status_manager = StatusManager()
 
-    def calculate_hp(self)->int:
-        """Calculate Hit Points based on stamina and level."""
-        return (self.stamina * 10) + (self.level * 5)
+    def recalculate_derived_stats(self) -> None:
+        """Recalculate derived stats based on explicit stats."""
+        self.derived_stats["exp_to_next_level"] = self.calculate_exp_to_next_level()
+        self.derived_stats["max_hp"] = self.calculate_hp()
+        self.derived_stats["max_mp"] = self.calculate_mana()
+        self.derived_stats["hit"] = self.calculate_hit()
+        self.derived_stats["damage"] = self.calculate_damage()
+        self.derived_stats["ac"] = self.calculate_ac()
 
-    def calculate_mana(self)->int:
-        """Calculate Mana based on willpower and level."""
-        return (self.willpower * 8) + (self.level * 3)
+        # Ensure temporary stats remain within bounds
+        self.resources["hp"] = min(self.resources["hp"], self.derived_stats["max_hp"])
+        self.resources["mp"]= min(self.resources["mp"], self.derived_stats["max_mp"])
 
-    def calculate_hit(self)->int:
-        """Calculate Hit (accuracy) based on agility and level."""
-        return (self.agility * 2) + (self.level * 1)
+    # Calculation methods for derived stats
+    def calculate_hp(self) -> int:
+        return (self.explicit_stats["stamina"] * 10) + (self.explicit_stats["level"] * 5)
 
-    def calculate_damage(self)->int:
-        """Calculate Damage based on strength and level."""
-        return (self.strength * 3) + (self.level * 2)
+    def calculate_mana(self) -> int:
+        return (self.explicit_stats["willpower"] * 8) + (self.explicit_stats["level"] * 3)
 
-    def calculate_ac(self, armor_bonus:int=0)->int:
-        """Calculate Armor Class (AC) based on agility and equipped armor."""
+    def calculate_hit(self) -> int:
+        return (self.explicit_stats["agility"] * 2) + (self.explicit_stats["level"])
+
+    def calculate_damage(self) -> int:
+        return (self.explicit_stats["strength"] * 3) + (self.explicit_stats["level"] * 2)
+
+    def calculate_ac(self, armor_bonus: int = 0) -> int:
         base_ac = 10
-        return base_ac + self.agility + armor_bonus
+        return base_ac + self.explicit_stats["agility"] + armor_bonus
 
-    def calculate_exp_to_next_level(self)->int:
-        """Calculate the EXP needed for the next level."""
-        base_exp = 0
-        multiplier = 50  # Adjust as needed for curve steepness
-        return base_exp + (self.level ** 2 * multiplier)
+    def calculate_exp_to_next_level(self) -> int:
+        multiplier = 50
+        return (self.explicit_stats["level"] ** 2) * multiplier
 
-    def gain_exp(self, amount:int)->None:
-        """Adds EXP and checks for level-up."""
-        self.exp += amount
-        print(f"Gained {amount} EXP. Total: {self.exp}")
+    # Stat modification methods
+    def get(self, stat: str) -> int:
+        """Get the value of a stat, derived stat, or resource."""
+        value = (
+            self.explicit_stats.get(stat) or
+            self.derived_stats.get(stat) or
+            self.resources.get(stat) or
+            self.meta_info.get(stat)
+        )
+        if value is None:
+            raise KeyError(f"Stat '{stat}' not found in any category.")
+        return value
 
-        # Check for level-up
-        while self.exp >= self.exp_to_next_level:
-            self.exp -= self.exp_to_next_level
+    def modify_stat(self, stat_modifications: dict[str, int]) -> None:
+        """Modify explicit stats and recalculate derived stats."""
+        for stat, value in stat_modifications.items():
+            if stat in self.explicit_stats:
+                self.explicit_stats[stat] += value
+            else:
+                print(f"Stat '{stat}' not found in explicit stats.")
+        self.recalculate_derived_stats()
+
+    def gain_exp(self, amount: int) -> None:
+        """Adds EXP and handles leveling up."""
+        self.derived_stats["exp"] += amount
+        while self.derived_stats["exp"] >= self.derived_stats["exp_to_next_level"]:
+            self.derived_stats["exp"] -= self.derived_stats["exp_to_next_level"]
             self.level_up()
 
-    def level_up(self)->None:
-        """Handles leveling up the player."""
-        self.level += 1
-        print(f"Level Up! New Level: {self.level}")
-
-        # Recalculate stats
-        self.exp_to_next_level = self.calculate_exp_to_next_level()
+    def level_up(self) -> None:
+        """Handles leveling up."""
+        self.explicit_stats["level"] += 1
+        print(f"Level Up! New Level: {self.explicit_stats['level']}")
         self.recalculate_derived_stats()
 
-    def check_stat(self, stat:str, required_value:int)->None:
-        """Check if a stat meets a required value."""
-        return getattr(self, stat) >= required_value
+    # Temporary stats
+    def modify_hp(self, amount: int) -> None:
+        self.resources["hp"] = max(0, min(self.resources["hp"] + amount, self.derived_stats["max_hp"]))
 
-    def modify_stat(self, stats: dict[str, int]) -> None:
-        """
-        Modify explicit stats and update derived stats.
-        :param stats: A dictionary where keys are stat names and values are the amounts to modify.
-        """
-        for stat, value in stats.items():
-            if hasattr(self, stat):
-                setattr(self, stat, getattr(self, stat) + value)
+    def modify_mp(self, amount: int) -> None:
+        self.resources["mp"]= max(0, min(self.resources["mp"] + amount, self.derived_stats["max_mp"]))
+
+    # Utility methods
+    def to_dict(self) -> dict:
+        """Return all stats as a dictionary."""
+        return {
+            "explicit_stats": self.explicit_stats,
+            "derived_stats": self.derived_stats,
+            "resources": self.resources,
+            "meta_info": self.meta_info,
+        }
+
+    def load_from_dict(self, data: dict) -> None:
+        """Load stats from a dictionary with validation."""
+        for key in ["explicit_stats", "resources", "meta_info"]:
+            if key in data and isinstance(data[key], dict):
+                getattr(self, key).update(data[key])
             else:
-                print(f"Stat '{stat}' not found.")
-        # Recalculate derived stats after all modifications
+                print(f"Warning: Missing or invalid data for {key}.")
         self.recalculate_derived_stats()
 
-    def advance_day(self, days:int=1)->None:
-        """Advance the in-game day by the specified number of days."""
-        self.day += days
-        print(f"Advanced {days} day(s). Current Day: {self.day}")
-
-    def check_hp(self, required_hp:int)->bool:
-        """Check if there is sufficient HP for a given action."""
-        return self.hp >= required_hp
-
-    def modify_hp(self, amount:int)->None:
-        """Adjust HP by a given amount, ensuring it stays within bounds."""
-        self.hp = max(0, min(self.hp + amount, self.max_hp))
-        if self.hp == 0:
-            print("The player is down!")
-            
-    def check_mp(self, required_mp:int)->bool:
-        """Check if there is sufficient MP for a given action."""
-        return self.mp >= required_mp
-
-    def modify_mp(self, amount:int)->None:
-        """Adjust MP by a given amount, ensuring it stays within bounds."""
-        self.mp = max(0, min(self.mp + amount, self.max_mp))
-
-    def recalculate_derived_stats(self)->None:
-        """Recalculate all derived stats based on current explicit stats."""
-        self.max_hp = self.calculate_hp()
-        self.max_mp = self.calculate_mana()
-        self.hit = self.calculate_hit()
-        self.damage = self.calculate_damage()
-        self.ac = self.calculate_ac()
-
-        # Ensure temporary stats like HP/MP are still within their bounds
-        self.hp = min(self.hp, self.max_hp)
-        self.mp = min(self.mp, self.max_mp)
-
-    def show_stats(self)->str:
-        """Display the player's current stats."""
-        return f"Stats: HP={self.hp}/{self.max_hp}, MP={self.mp}/{self.max_mp}, Level={self.level}, EXP={self.exp}/{self.exp_to_next_level}, Day={self.day}"
+    def show_stats(self):
+        """Print all stats to the console."""
+        print("\n--- Explicit Stats ---")
+        for stat, value in self.explicit_stats.items():
+            print(f"{stat.capitalize()}: {value}")
+        print("\n--- Derived Stats ---")
+        for stat, value in self.derived_stats.items():
+            print(f"{stat.capitalize()}: {value}")
+        print("\n--- Resources ---")
+        for stat, value in self.resources.items():
+            print(f"{stat.capitalize()}: {value}")
+        print("\n--- Meta Info ---")
+        for stat, value in self.meta_info.items():
+            print(f"{stat.capitalize()}: {value}")
