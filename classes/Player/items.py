@@ -20,6 +20,45 @@ class Item:
         self.description = description
         self.gold_cost = gold_cost
 
+    @staticmethod
+    def create_item(name:str, data: dict) -> Item:
+        """
+        Factory method to create an item based on the data dictionary.
+        :param data: A dictionary containing item properties.
+        :return: An instance of Item or its subclasses.
+        """
+        item_type = data.get("type")
+        if item_type == "Consumable":
+            return Consumable(
+                name=name,
+                stackable=data["stackable"],
+                description=data["description"],
+                gold_cost=data["gold_cost"],
+                effect_type=data["effect_type"],
+                effect_value=data.get("effect_value", 0),
+                status_effect=data.get("status_effect", None),
+            )
+        elif item_type == "Equipment":
+            return Equipment(
+                name=name,
+                stackable=data["stackable"],
+                description=data["description"],
+                gold_cost=data["gold_cost"],
+                slot=data["slot"],
+                stats=data["stats"],
+                required_stats=data.get("required_stats", {}),
+            )
+        elif item_type == "PlotItem":
+            return PlotItem(
+                name=name,
+                stackable=data["stackable"],
+                description=data["description"],
+                gold_cost=data["gold_cost"],
+                quest_name=data["quest_name"],
+            )
+        else:
+            raise ValueError(f"Unknown item type: {item_type}")
+
     def is_usable(self, player):
         """
         Determine if the item is usable in the current context.
@@ -41,14 +80,14 @@ class Item:
 #########################################################################################
 
 class Consumable(Item):
-    def __init__(self, name, description, gold_cost, effect_type, effect_value=0, status_effect=None):
+    def __init__(self, name, stackable, description, gold_cost, effect_type, effect_value=0, status_effect=None):
         """
         Consumable items with diverse effects.
         :param effect_type: The type of effect ("restore_hp", "restore_mp", "remove_status", "apply_status").
         :param effect_value: The magnitude of the effect (e.g., amount of HP restored).
         :param status_effect: A StatusEffect object to apply, if applicable.
         """
-        super().__init__(name, stackable=True, description=description, gold_cost=gold_cost)
+        super().__init__(name, stackable=stackable, description=description, gold_cost=gold_cost)
         self.effect_type:str = effect_type  # "restore_hp", "restore_mp", etc.
         self.effect_value:int = effect_value
         self.status_effect:StatusEffect = status_effect
@@ -97,12 +136,12 @@ class Consumable(Item):
     
 #########################################################################################
 class PlotItem(Item):
-    def __init__(self, name, description, gold_cost, quest_name):
+    def __init__(self, name, stackable, description, gold_cost, quest_name):
         """
         Plot items, usually for quests or story progression.
         :param quest_name: The name of the quest this item is tied to.
         """
-        super().__init__(name, stackable=False, description=description, gold_cost=gold_cost)
+        super().__init__(name, stackable=stackable|False, description=description, gold_cost=gold_cost)
         self.quest_name = quest_name
 
     def use_item(self, target):
@@ -120,14 +159,14 @@ class PlotItem(Item):
 
 #########################################################################################
 class Equipment(Item):
-    def __init__(self, name, description, gold_cost, slot, stats, required_stats=None):
+    def __init__(self, name, stackable, description, gold_cost, slot, stats, required_stats=None):
         """
         Equipment items like weapons or armor.
         :param slot: The equipment slot (e.g., "weapon", "armor").
         :param stats: A dictionary of stat modifiers (e.g., {"strength": 5, "agility": 2}).
         :param required_stats: Minimum stats required to equip the item (e.g., {"strength": 10}).
         """
-        super().__init__(name, stackable=False, description=description, gold_cost=gold_cost)
+        super().__init__(name, stackable=stackable|False, description=description, gold_cost=gold_cost)
         self.slot = slot
         self.stats = stats or {}  # Default to an empty dict if not provided
         self.required_stats = required_stats or {}  # Default to an empty dict if not provided

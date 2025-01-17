@@ -1,6 +1,6 @@
 import json
 from typing import Optional, TYPE_CHECKING
-from classes.Player.items import Consumable, Equipment, PlotItem
+from classes.Player.items import Consumable, Equipment, Item, PlotItem
 
 if TYPE_CHECKING:
     from classes.Player.player import Player
@@ -36,35 +36,16 @@ class SaveManager:
                 print(f"Error loading {file_name}: {e}")
         return item_definitions
 
-    def create_item(self, item_name: str) -> Optional[object]:
+    def create_item(self, item_name: str) -> Optional[Item]:
         """Create an item instance based on its name."""
         for item_type, items in self.item_definitions.items():
+            print(item_type, items)
             item_data = items.get(item_name)
             if item_data:
-                if item_type == "Consumable":
-                    return Consumable(
-                        name=item_name,
-                        description=item_data["description"],
-                        gold_cost=item_data["gold_cost"],
-                        effect_type=item_data["effect_type"],
-                        effect_value=item_data["effect_value"],
-                    )
-                elif item_type == "Plot":
-                    return PlotItem(
-                        name=item_name,
-                        description=item_data["description"],
-                        gold_cost=item_data["gold_cost"],
-                    )
-                elif item_type == "Equipment":
-                    return Equipment(
-                        name=item_name,
-                        description=item_data["description"],
-                        gold_cost=item_data["gold_cost"],
-                        slot=item_data["slot"],
-                        stats=item_data["stats"],
-                    )
+                return Item.create_item(item_name, item_data)
         print(f"Error: Item '{item_name}' not found in any definitions.")
         return None
+
 
     def save_game(self, player: "Player") -> None:  # Use string literal for forward reference
         """Save the player's game state to a JSON file."""

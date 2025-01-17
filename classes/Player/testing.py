@@ -42,15 +42,15 @@ class TestManager:
         print("Status effects passed.")
 
         print("\n--- Testing Consumables ---")
-        potion = Consumable(name="Health Potion", description="Restores 50 HP.", gold_cost=10, effect_type="restore_hp", effect_value=50)
+        potion = Consumable(name="Health Potion", stackable=True, description="Restores 50 HP.", gold_cost=10, effect_type="restore_hp", effect_value=50)
         self.test_player.inventory.add_item(potion, count=3)
         self.test_player.inventory.use(0, self.test_player)
         assert self.test_player.stats.resources["hp"] == min(self.test_player.stats.derived_stats["max_hp"], self.test_player.stats.resources["hp"] + 50), "Health potion failed."
         print("Consumables passed.")
 
         print("\n--- Testing Equipment ---")
-        sword = Equipment(name="Steel Sword", description="A sturdy steel sword.", gold_cost=100, slot="weapon", stats={"strength": 5}, required_stats={"strength": 10})
-        armor = Equipment(name="Iron Armor", description="Heavy iron armor.", gold_cost=150, slot="armor", stats={"stamina": 8}, required_stats={"stamina": 12})
+        sword = Equipment(name="Steel Sword", stackable=False, description="A sturdy steel sword.", gold_cost=100, slot="weapon", stats={"strength": 5}, required_stats={"strength": 10})
+        armor = Equipment(name="Iron Armor", stackable=False, description="Heavy iron armor.", gold_cost=150, slot="armor", stats={"stamina": 8}, required_stats={"stamina": 12})
 
         # Equip sword
         self.test_player.equipment_manager.equip(sword, inventory_index=None)
@@ -58,7 +58,7 @@ class TestManager:
         assert self.test_player.stats.explicit_stats["strength"] == 20, "Sword stats not applied correctly."
 
         # Replace sword with a shield and test inventory swap
-        shield = Equipment(name="Iron Shield", description="A sturdy iron shield.", gold_cost=80, slot="weapon", stats={"stamina": 5})
+        shield = Equipment(name="Iron Shield", stackable=False, description="A sturdy iron shield.", gold_cost=80, slot="weapon", stats={"stamina": 5})
         self.test_player.inventory.add_item(shield)
         self.test_player.equipment_manager.equip(shield, inventory_index=None)
         assert self.test_player.equipment_manager.is_equipped("Iron Shield"), "Failed to equip shield."
@@ -107,8 +107,8 @@ class TestManager:
         print("Status effects passed.")
 
         print("\n--- Testing Consumables ---")
-        potion = Consumable(name="Health Potion", description="Restores 50 HP.", gold_cost=10, effect_type="restore_hp", effect_value=50)
-        antidote = Consumable(name="Antidote", description="Removes Poison.", gold_cost=15, effect_type="remove_status", status_effect=poison)
+        potion = Consumable(name="Health Potion", stackable=True, description="Restores 50 HP.", gold_cost=10, effect_type="restore_hp", effect_value=50)
+        antidote = Consumable(name="Antidote", stackable=True, description="Removes Poison.", gold_cost=15, effect_type="remove_status", status_effect=poison)
         self.test_player2.inventory.add_item(potion, count=3)
         self.test_player2.inventory.add_item(antidote)
         self.test_player2.inventory.use(0, self.test_player2)  # Use potion
@@ -118,8 +118,8 @@ class TestManager:
         print("Consumables passed.")
 
         print("\n--- Testing Equipment ---")
-        sword = Equipment(name="Steel Sword", description="A sturdy steel sword.", gold_cost=100, slot="weapon", stats={"strength": 5}, required_stats={"strength": 10})
-        heavy_armor = Equipment(name="Heavy Armor", description="Requires high stamina.", gold_cost=200, slot="armor", stats={"stamina": 10}, required_stats={"stamina": 15})
+        sword = Equipment(name="Steel Sword", stackable=False, description="A sturdy steel sword.", gold_cost=100, slot="weapon", stats={"strength": 5}, required_stats={"strength": 10})
+        heavy_armor = Equipment(name="Heavy Armor", stackable=False, description="Requires high stamina.", gold_cost=200, slot="armor", stats={"stamina": 10}, required_stats={"stamina": 15})
         self.test_player2.inventory.add_item(sword)
         self.test_player2.equipment_manager.equip(sword, inventory_index=0)
         assert self.test_player2.equipment_manager.is_equipped("Steel Sword"), "Failed to equip sword."
@@ -131,7 +131,7 @@ class TestManager:
         print("Equipment tests passed.")
 
         print("\n--- Testing Inventory ---")
-        stackable_item = Consumable(name="Mana Potion", description="Restores 50 MP.", gold_cost=12, effect_type="restore_mp", effect_value=50)
+        stackable_item = Consumable(name="Mana Potion", stackable=True, description="Restores 50 MP.", gold_cost=12, effect_type="restore_mp", effect_value=50)
         self.test_player2.inventory.add_item(stackable_item, count=98)  # Add near max
         self.test_player2.inventory.add_item(stackable_item, count=5)  # Exceed stack max
         assert len(self.test_player2.inventory.items) > 1, "Failed to create a new stack for overflow."

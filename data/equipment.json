@@ -1,18 +1,20 @@
 {
     "Steel Sword": {
-        "description": "A sturdy steel sword.",
+        "type": "Equipment",
+        "stackable": false,
+        "description": "A sturdy iron sword.",
         "gold_cost": 100,
         "slot": "weapon",
-        "stats": {
-            "strength": 5
-        }
+        "stats": {"strength": 5},
+        "required_stats": {"strength": 10}
     },
-    "Iron Shield": {
-        "description": "A sturdy iron shield.",
-        "gold_cost": 80,
-        "slot": "shield",
-        "stats": {
-            "stamina": 5
-        }
+    "Leather Armor": {
+        "type": "Equipment",
+        "stackable": false,
+        "description": "Light armor made of leather.",
+        "gold_cost": 75,
+        "slot": "armor",
+        "stats": {"stamina": 3},
+        "required_stats": {"stamina": 8}
     }
 }

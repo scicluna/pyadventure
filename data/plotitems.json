@@ -1,9 +1,13 @@
 {
     "Ancient Amulet": {
+        "type" : "Plot Item",
+        "stackable": false,
         "description": "A mysterious amulet of unknown origin.",
         "gold_cost": 0
     },
     "Golden Key": {
+        "type" : "Plot Item",
+        "stackable": false,
         "description": "A shiny key with an intricate design.",
         "gold_cost": 0
     }

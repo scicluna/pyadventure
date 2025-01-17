@@ -1,0 +1,52 @@
+{
+    "events": {
+        "1": {
+            "name": "The Forest Clearing",
+            "event_text": "You stumble upon a goblin in a clearing. It snarls at you.",
+            "background_img": "forest_clearing.jpg",
+            "background_music": "forest_theme.mp3",
+            "choices": [
+                {
+                    "text": "Fight! (Strength)",
+                    "screen_fx": "slash",
+                    "min_requirement": [{"strength": 10}],
+                    "outcomes": [
+                        {
+                            "threshold": [{"strength": 15}],
+                            "text": "You overpower the goblin with ease.",
+                            "effects": [
+                                {"action": "modify_hp", "value": 0},
+                                {"action": "mark_flag", "value": "goblin_defeated_cleanly"},
+                                {"action": "set_next_event", "value": 2}
+                            ]
+                        },
+                        {
+                            "threshold": [{"strength": 10}],
+                            "text": "You defeat the goblin but sustain injuries.",
+                            "effects": [
+                                {"action": "modify_hp", "value": 5},
+                                {"action": "mark_flag", "value": "goblin_defeated_but_injured"},
+                                {"action": "set_next_event", "value": 2}
+                            ]
+                        }
+                    ]
+                },
+                {
+                    "text": "Run away",
+                    "screen_fx": "dash",
+                    "min_requirement": [{}],
+                    "outcomes": [
+                        {
+                            "threshold": [{}],
+                            "text": "You escape safely into the woods.",
+                            "effects": [
+                                {"action": "set_next_event", "event_id": 4}
+                            ],
+                            "next_event": 4
+                        }
+                    ]
+                }
+            ]
+        }
+    }
+}

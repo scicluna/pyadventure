@@ -1,14 +1,18 @@
 {
     "Health Potion": {
+        "type": "Consumable",
         "description": "Restores 50 HP.",
-        "gold_cost": 10,
+        "gold_cost": 25,
+        "stackable": true,
         "effect_type": "restore_hp",
         "effect_value": 50
     },
     "Mana Potion": {
-        "description": "Restores 50 MP.",
-        "gold_cost": 12,
+        "type": "Consumable",
+        "description": "Restores 30 MP.",
+        "gold_cost": 20,
+        "stackable": true,
         "effect_type": "restore_mp",
-        "effect_value": 50
+        "effect_value": 30
     }
 }
