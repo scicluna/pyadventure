@@ -1,9 +1,20 @@
 from __future__ import annotations
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, TypedDict
 if TYPE_CHECKING:
     from classes.Player.items import Equipment
     from classes.Player.player import Player
 
+class EquippedItems(TypedDict):
+    weapon: Equipment
+    armor: Equipment
+    cloak: Equipment
+    boots: Equipment
+    bracer: Equipment
+    head: Equipment
+    belt: Equipment
+    ring1: Equipment
+    ring2: Equipment
+    amulet: Equipment
 
 class EquipmentManager:
     def __init__(self, player:Player):
@@ -12,7 +23,7 @@ class EquipmentManager:
         :param player: The player whose equipment is managed.
         """
         self.player = player
-        self.equipped_items:dict[str,Equipment] = {
+        self.equipped_items:EquippedItems = {
             "weapon": None,
             "armor": None,
             "cloak": None,

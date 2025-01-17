@@ -140,6 +140,55 @@ class TestManager:
         assert remaining_count == 53, f"Expected 53 Mana Potions, found {remaining_count}."
         print("Inventory tests passed.")
 
+        print("\n--- Testing SpellManager ---")
+        self.test_player2.stats.resources["mp"] = 29 # Set mana to 29 for testing
+        # Add a new spell
+        fireball = {"name": "Fireball", "description": "A blazing ball of fire.", "mana_cost": 15, "rank": 1}
+        self.test_player2.spell_manager.add_spell(fireball)
+        assert self.test_player2.spell_manager.has_spell("Fireball"), "Failed to add Fireball spell."
+        print("Added Fireball.")
+
+        # Attempt to cast Fireball with sufficient mana
+        self.test_player2.spell_manager.use_spell("Fireball", self.test_player2)
+        assert self.test_player2.stats.resources["mp"] == 14, "Mana not reduced correctly after casting Fireball."
+        print("Casted Fireball successfully.")
+
+        # Attempt to cast Fireball with insufficient mana
+
+        self.test_player2.spell_manager.use_spell("Fireball", self.test_player2)
+        assert self.test_player2.stats.resources["mp"] == 14, "Mana should not change when casting with insufficient mana."
+        print("Handled insufficient mana correctly.")
+
+        # Add an upgraded version of Fireball
+        fireball_rank2 = {"name": "Fireball", "description": "A more powerful fireball.", "mana_cost": 25, "rank": 2}
+        self.test_player2.spell_manager.add_spell(fireball_rank2)
+        assert any(spell["rank"] == 2 for spell in self.test_player2.spell_manager.spells), "Failed to upgrade Fireball spell."
+        print("Upgraded Fireball to rank 2.")
+
+        # Attempt to cast the upgraded Fireball with insufficient mana
+        self.test_player2.spell_manager.use_spell("Fireball", self.test_player2)
+        assert self.test_player2.stats.resources["mp"] == 14, "Mana should not change when casting upgraded Fireball with insufficient mana."
+        print("Handled insufficient mana for upgraded spell correctly.")
+
+        # Add another spell
+        lightning = {"name": "Lightning Bolt", "description": "A strike of electricity.", "mana_cost": 10, "rank": 1}
+        self.test_player2.spell_manager.add_spell(lightning)
+        assert self.test_player2.spell_manager.has_spell("Lightning Bolt"), "Failed to add Lightning Bolt spell."
+        print("Added Lightning Bolt.")
+
+        # Cast Lightning Bolt
+        self.test_player2.spell_manager.use_spell("Lightning Bolt", self.test_player2)
+        assert self.test_player2.stats.resources["mp"] == 4, "Mana not reduced correctly after casting Lightning Bolt."
+        print("Casted Lightning Bolt successfully.")
+
+        # List spells
+        spell_list = self.test_player2.spell_manager.list_spells()
+        assert len(spell_list) == 2, "Spell list should contain exactly 2 spells."
+        print("Spell list is accurate:", spell_list)
+
+        print("\nAll tests passed for SpellManager!")
+
+
         print("\n--- All tests passed! ---")
 
     def save_test1(self):
@@ -206,8 +255,8 @@ class TestManager:
         # Load the dummy save
         player = self.test_player35
         save_manager.save_file = dummy_save_file
+        save_manager.load_game(player)
 
-        print(player.flags.list_flags())
         # Verify loaded player state
         assert player.stats.explicit_stats["strength"] == 15
         assert player.stats.meta_info["day"] == 5
