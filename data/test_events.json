@@ -1,0 +1,91 @@
+{
+    "events": {
+        "1": {
+            "name": "The Forest Clearing",
+            "event_text": "You stumble upon a goblin in a clearing. It snarls at you.",
+            "background_img": "forest_clearing.jpg",
+            "background_music": "forest_theme.mp3",
+            "choices": [
+                {
+                    "text": "Fight! (Strength)",
+                    "screen_fx": "slash",
+                    "min_requirement": [{"strength": 10}],
+                    "outcomes": [
+                        {
+                            "threshold": [{"strength": 15}],
+                            "text": "You overpower the goblin with ease.",
+                            "effects": [
+                                {"action": "modify_xp", "value": 20},
+                                {"action": "set_next_event", "value": 2}
+                            ]
+                        },
+                        {
+                            "threshold": [{"strength": 10}],
+                            "text": "You defeat the goblin but sustain injuries.",
+                            "effects": [
+                                {"action": "modify_hp", "value": -5},
+                                {"action": "modify_xp", "value": 20},
+                                {"action": "set_next_event", "value": 2}
+                            ]
+                        }
+                    ]
+                }
+            ]
+        },
+        "2": {
+            "name": "A Forest Glade",
+            "event_text": "Two more goblins turn to face you as you enter the forest clearing.",
+            "background_img": "forest_clearing.jpg",
+            "background_music": "forest_theme.mp3",
+            "choices": [
+                {
+                "text": "Fight! (Strength)",
+                    "screen_fx": "slash",
+                    "min_requirement": [{"strength": 10}],
+                    "outcomes": [
+                        {
+                            "threshold": [{"strength": 20}],
+                            "text": "You overpower the goblins with ease.",
+                            "effects": [
+                                {"action": "modify_xp", "value": 40},
+                                {"action": "set_next_event", "value": 3}
+                            ]
+                        },
+                        {
+                            "threshold": [{"strength": 10}],
+                            "text": "You defeat the goblins but sustain injuries.",
+                            "effects": [
+                                {"action": "modify_hp", "value": -10},
+                                {"action": "modify_xp", "value": 40},
+                                {"action": "set_next_event", "value": 3}
+                            ]
+                        }
+                    ]
+                }
+            ]
+        },
+        "3": {
+            "name": "The Goblin Camp",
+            "event_text": "You enter into an abandoned goblin encampment. What do you do?.",
+            "background_img": "goblin_camp.jpg",
+            "background_music": "forest_theme.mp3",
+            "choices": [
+                {
+                    "text": "Thoroughly Search the Camp",
+                    "screen_fx": "lapse",
+                    "min_requirement": [{}],
+                    "outcomes": [
+                        {
+                            "threshold": [{}],
+                            "text": "You take your time and search the camp... You find xxx.",
+                            "effects": [
+                                {"action": "modify_day", "value": ".5"},
+                                {"action": "set_next_event", "value": 3}
+                            ]
+                        }
+                    ]
+                }
+            ]
+        }
+    }
+}

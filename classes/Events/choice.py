@@ -1,12 +1,13 @@
+from __future__ import annotations
 from enum import Enum
 from typing import TypedDict, TYPE_CHECKING
-
-if TYPE_CHECKING:
-    from classes.Player.player import Player
+from classes.Player.player import Player
 
 class EffectAction(Enum):
     MODIFY_HP = "modify_hp"  # Increase the player's HP
     MODIFY_MP = "modify_mp"  # Increase the player's MP
+    MODIFY_XP = "modify_xp" # Increase the player's XP
+    MODIFY_DAY = "modify_day" # Increases the day
     MARK_FLAG = "mark_flag"  # Mark a flag
     UNMARK_FLAG = "unmark_flag"  # Unmark a flag
     GAIN_ITEM = "gain_item"  # Add an item to the player's inventory
@@ -16,7 +17,6 @@ class EffectAction(Enum):
     LEARN_SPELL = "learn_spell"  # Teach the player a spell
     PLAY_ANIMATION = "play_animation"  # Play a specific animation or effect
     PLAY_SOUND = "play_sound"  # Play a specific sound
-    CHANGE_LOCATION = "change_location"  # Update the player's location
 
 class Requirement(Enum):
     STRENGTH = "strength"
@@ -92,6 +92,10 @@ class Choice:
 
             if action == EffectAction.MODIFY_HP:
                 player.stats.modify_hp(value)
+            elif action == EffectAction.MODIFY_XP:
+                player.stats.gain_exp(value)
+            elif action == EffectAction.MODIFY_DAY:
+                player.stats.modify_day(value)
             elif action == EffectAction.MARK_FLAG:
                 player.flags.set_flag(value)
             elif action == EffectAction.UNMARK_FLAG:
@@ -103,7 +107,7 @@ class Choice:
             elif action == EffectAction.MODIFY_STAT:
                 player.stats.modify_stat(value)
             elif action == EffectAction.SET_NEXT_EVENT:
-                player.event_manager.set_next_event(value)
+                player.stats.advance_event(value)
             elif action == EffectAction.MODIFY_MP:
                 player.stats.modify_mp(value)
             elif action == EffectAction.LEARN_SPELL:
@@ -114,7 +118,5 @@ class Choice:
             elif action == EffectAction.PLAY_SOUND:
                 # Future hook for sound effects
                 pass
-            elif action == EffectAction.CHANGE_LOCATION:
-                player.stats.meta_info["location"] = value
             else:
                 print(f"Invalid effect action: {action} -- {value} -- {self.text}")

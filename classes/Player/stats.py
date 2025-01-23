@@ -25,7 +25,7 @@ class Resources(TypedDict):
 
 class MetaInfo(TypedDict):
     day: int
-    location: int
+    event: int
 
 class Stats:
     def __init__(self, initial_explicit:dict[str,int]=None)->None:
@@ -65,7 +65,7 @@ class Stats:
         # Other
         self.meta_info: MetaInfo = {
             "day": 1,
-            "location": 0
+            "event": 1
         }
 
         self.status_manager = StatusManager()
@@ -128,9 +128,9 @@ class Stats:
 
     def gain_exp(self, amount: int) -> None:
         """Adds EXP and handles leveling up."""
-        self.derived_stats["exp"] += amount
-        while self.derived_stats["exp"] >= self.derived_stats["exp_to_next_level"]:
-            self.derived_stats["exp"] -= self.derived_stats["exp_to_next_level"]
+        self.explicit_stats["exp"] += amount
+        while self.explicit_stats["exp"] >= self.derived_stats["exp_to_next_level"]:
+            self.explicit_stats["exp"] -= self.derived_stats["exp_to_next_level"]
             self.level_up()
 
     def level_up(self) -> None:
@@ -138,6 +138,12 @@ class Stats:
         self.explicit_stats["level"] += 1
         print(f"Level Up! New Level: {self.explicit_stats['level']}")
         self.recalculate_derived_stats()
+
+    def modify_day(self, amount: float) -> None:
+        self.meta_info["day"] += amount
+
+    def advance_event(self, event: int) -> None:
+        self.meta_info["event"] = event
 
     # Temporary stats
     def modify_hp(self, amount: int) -> None:

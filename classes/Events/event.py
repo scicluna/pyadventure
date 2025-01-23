@@ -1,7 +1,6 @@
 from typing import TYPE_CHECKING, TypedDict
-from Events.choice import Choice
-if TYPE_CHECKING:
-    from classes.Player.player import Player
+from classes.Events.choice import Choice
+from classes.Player.player import Player
     
 class StructuredEvent(TypedDict):
     name: str
