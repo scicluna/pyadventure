@@ -1,5 +1,6 @@
 {
-    "Health Potion": {
+    "1": {
+        "name": "Health Potion",
         "type": "Consumable",
         "description": "Restores 50 HP.",
         "gold_cost": 25,
@@ -7,12 +8,22 @@
         "effect_type": "restore_hp",
         "effect_value": 50
     },
-    "Mana Potion": {
+    "2": {
+        "name": "Mana Potion",
         "type": "Consumable",
-        "description": "Restores 30 MP.",
+        "description": "Restores 50 MP.",
         "gold_cost": 20,
         "stackable": true,
         "effect_type": "restore_mp",
-        "effect_value": 30
+        "effect_value": 50
+    },
+    "11": {
+        "name": "Antidote",
+        "type": "Consumable",
+        "description": "Removes Poison.",
+        "gold_cost": 15,
+        "stackable": true,
+        "effect_type": "remove_status",
+        "status_effect": "poison"
     }
 }

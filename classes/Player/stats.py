@@ -117,13 +117,16 @@ class Stats:
             raise KeyError(f"Stat '{stat}' not found in any category.")
         return value
 
-    def modify_stat(self, stat_modifications: dict[str, int]) -> None:
+    def modify_stats(self, stat_modifications: list[dict[str, int]]) -> None:
         """Modify explicit stats and recalculate derived stats."""
-        for stat, value in stat_modifications.items():
-            if stat in self.explicit_stats:
-                self.explicit_stats[stat] += value
-            else:
-                print(f"Stat '{stat}' not found in explicit stats.")
+        print(stat_modifications)
+        for stat_pair in stat_modifications:
+            print("stat pair:", stat_pair)
+            for stat, value in stat_pair.items():
+                if stat in self.explicit_stats:
+                    self.explicit_stats[stat] += value
+                else:
+                    print(f"Warning: Stat '{stat}' not found in explicit stats.")
         self.recalculate_derived_stats()
 
     def gain_exp(self, amount: int) -> None:

@@ -5,7 +5,7 @@ import os
 from typing import TYPE_CHECKING
 from classes.Player.save_manager import SaveManager
 from classes.Player.status_effects import StatusEffect, StatusManager
-from classes.Player.items import Consumable, Equipment
+from classes.Player.items import Consumable, Equipment, Item
 if TYPE_CHECKING:
     from classes.Player.equipment_manager import EquipmentManager
     from classes.Player.inventory import Inventory
@@ -26,11 +26,24 @@ class TestManager:
         """Run tests for the Player class and its related systems."""
         print("Starting Player class tests...")
 
+        # Initialize SaveManager with test files
+        save_manager = SaveManager(
+            player=self.test_player,
+            save_file='test_events.json',
+            consumables_file='data/consumables.json',
+            equipment_file='data/equipment.json',
+            plotitems_file='data/plotitems.json',
+        )
+
         print("\n--- Testing Stat Modifications ---")
-        self.test_player.stats.modify_stat({"strength": 5, "stamina": -3})
+        self.test_player.stats.modify_stats([{"strength": 5}, {"stamina": -3}])
         assert self.test_player.stats.explicit_stats["strength"] == 15, "Strength modification failed."
         assert self.test_player.stats.explicit_stats["stamina"] == 7, "Stamina modification failed."
         print("Stat modifications passed.")
+
+        #reset stat
+        self.test_player.stats.modify_stats([{"strength": -5}, {"stamina": 3}])
+        self.test_player.stats.modify_hp(500) # full hp
 
         print("\n--- Testing Status Effects ---")
         print("\n--- Current HP = ", self.test_player.stats.resources["hp"])
@@ -42,29 +55,34 @@ class TestManager:
         print("Status effects passed.")
 
         print("\n--- Testing Consumables ---")
-        potion = Consumable(name="Health Potion", stackable=True, description="Restores 50 HP.", gold_cost=10, effect_type="restore_hp", effect_value=50)
+        potion = save_manager.create_item(1) # potion
         self.test_player.inventory.add_item(potion, count=3)
         self.test_player.inventory.use(0, self.test_player)
         assert self.test_player.stats.resources["hp"] == min(self.test_player.stats.derived_stats["max_hp"], self.test_player.stats.resources["hp"] + 50), "Health potion failed."
         print("Consumables passed.")
 
         print("\n--- Testing Equipment ---")
-        sword = Equipment(name="Steel Sword", stackable=False, description="A sturdy steel sword.", gold_cost=100, slot="weapon", stats={"strength": 5}, required_stats={"strength": 10})
-        armor = Equipment(name="Iron Armor", stackable=False, description="Heavy iron armor.", gold_cost=150, slot="armor", stats={"stamina": 8}, required_stats={"stamina": 12})
+        sword = save_manager.create_item(3) #steel sword
+        armor = save_manager.create_item(8) #iron armor
 
         # Equip sword
         self.test_player.equipment_manager.equip(sword, inventory_index=None)
         assert self.test_player.equipment_manager.is_equipped("Steel Sword"), "Failed to equip sword."
-        assert self.test_player.stats.explicit_stats["strength"] == 20, "Sword stats not applied correctly."
+        assert self.test_player.stats.explicit_stats["strength"] == 15, f"Sword stats not applied correctly. (current strength = {self.test_player.stats.explicit_stats['strength']})"
+
+        # Equip armor
+        self.test_player.equipment_manager.equip(armor, inventory_index=None)
+        assert self.test_player.equipment_manager.is_equipped("Iron Armor"), "Failed to equip armor."
+        assert self.test_player.stats.explicit_stats["stamina"] == 15, "Armor stats not applied correctly."
 
         # Replace sword with a shield and test inventory swap
-        shield = Equipment(name="Iron Shield", stackable=False, description="A sturdy iron shield.", gold_cost=80, slot="weapon", stats={"stamina": 5})
+        shield = save_manager.create_item(9) #iron shield
         self.test_player.inventory.add_item(shield)
         self.test_player.equipment_manager.equip(shield, inventory_index=None)
         assert self.test_player.equipment_manager.is_equipped("Iron Shield"), "Failed to equip shield."
         assert not self.test_player.equipment_manager.is_equipped("Steel Sword"), "Failed to unequip sword."
-        assert self.test_player.stats.explicit_stats['strength'] == 15, "Failed to remove sword stats."
-        assert self.test_player.stats.explicit_stats['stamina'] == 12, "Shield stats not applied correctly."
+        assert self.test_player.stats.explicit_stats['strength'] == 10, f"Failed to remove sword stats. (current = {self.test_player.stats.explicit_stats['strength']})"
+        assert self.test_player.stats.explicit_stats['stamina'] == 20, f"Shield stats not applied correctly. (current = {self.test_player.stats.explicit_stats['stamina']})"
 
         print("Equipment tests passed.")
 
@@ -83,43 +101,52 @@ class TestManager:
         """Run tests for the Player class and its related systems."""
         print("Starting Player class tests...")
 
+        # Initialize SaveManager with test files
+        save_manager = SaveManager(
+            player=self.test_player2,
+            save_file='test_events.json',
+            consumables_file='data/consumables.json',
+            equipment_file='data/equipment.json',
+            plotitems_file='data/plotitems.json',
+        )
+
         print("\n--- Starting Stats ---")
         print(self.test_player2.stats.show_stats())
         print("\n--- Testing Stat Modifications ---")
-        self.test_player2.stats.modify_stat({"strength": 5, "stamina": -3, "agility": 2})
+        self.test_player2.stats.modify_stats([{"strength": 5}, {"stamina": -3}, {"agility": 2}])
         assert self.test_player2.stats.explicit_stats['strength'] == 15, "Strength modification failed."
         assert self.test_player2.stats.explicit_stats['stamina'] == 7, "Stamina modification failed."
         assert self.test_player2.stats.explicit_stats['agility'] == 12, "Agility modification failed."
         print("Stat modifications passed.")
 
         print("\n--- Testing Status Effects ---")
-        poison = StatusEffect(name="Poison", stat="hp", value=-5, duration=3)
-        blessing = StatusEffect(name="Blessing", stat="strength", value=3, duration=2)
+        poison = StatusEffect(name="poison", stat="hp", value=-5, duration=3)
+        blessing = StatusEffect(name="blessing", stat="strength", value=3, duration=2)
         self.test_player2.stats.status_manager.add_effect(poison, self.test_player2.stats)
         self.test_player2.stats.status_manager.add_effect(blessing, self.test_player2.stats)
-        assert self.test_player2.stats.status_manager.has_effect("Poison"), "Failed to apply Poison status."
-        assert self.test_player2.stats.status_manager.has_effect("Blessing"), "Failed to apply Blessing status."
+        assert self.test_player2.stats.status_manager.has_effect("poison"), "Failed to apply Poison status."
+        assert self.test_player2.stats.status_manager.has_effect("blessing"), "Failed to apply blessing status."
         self.test_player2.stats.status_manager.update_effects(self.test_player2.stats)
         assert self.test_player2.stats.resources["hp"] == max(0, self.test_player2.stats.derived_stats["max_hp"] - 5), "Poison damage failed."
-        assert self.test_player2.stats.explicit_stats['strength'] == 18, "Blessing stat boost failed."
+        assert self.test_player2.stats.explicit_stats['strength'] == 18, "blessing stat boost failed."
         self.test_player2.stats.status_manager.update_effects(self.test_player2.stats)
-        assert not self.test_player2.stats.status_manager.has_effect("Blessing"), "Blessing did not expire."
+        assert not self.test_player2.stats.status_manager.has_effect("blessing"), "blessing did not expire."
         print("Status effects passed.")
 
         print("\n--- Testing Consumables ---")
-        potion = Consumable(name="Health Potion", stackable=True, description="Restores 50 HP.", gold_cost=10, effect_type="restore_hp", effect_value=50)
-        antidote = Consumable(name="Antidote", stackable=True, description="Removes Poison.", gold_cost=15, effect_type="remove_status", status_effect=poison)
+        potion = save_manager.create_item(1)  # Health Potion
+        antidote = save_manager.create_item(11)  # Antidote
         self.test_player2.inventory.add_item(potion, count=3)
         self.test_player2.inventory.add_item(antidote)
         self.test_player2.inventory.use(0, self.test_player2)  # Use potion
         assert self.test_player2.stats.resources["hp"] == min(self.test_player2.stats.derived_stats["max_hp"], self.test_player2.stats.resources["hp"] + 50), "Health potion failed."
         self.test_player2.inventory.use(1, self.test_player2)  # Use antidote
-        assert not self.test_player2.stats.status_manager.has_effect("Poison"), "Antidote failed to remove Poison."
+        assert not self.test_player2.stats.status_manager.has_effect("poison"), "Antidote failed to remove poison."
         print("Consumables passed.")
 
         print("\n--- Testing Equipment ---")
-        sword = Equipment(name="Steel Sword", stackable=False, description="A sturdy steel sword.", gold_cost=100, slot="weapon", stats={"strength": 5}, required_stats={"strength": 10})
-        heavy_armor = Equipment(name="Heavy Armor", stackable=False, description="Requires high stamina.", gold_cost=200, slot="armor", stats={"stamina": 10}, required_stats={"stamina": 15})
+        sword = save_manager.create_item(3)  # Steel Sword
+        heavy_armor = save_manager.create_item(10)
         self.test_player2.inventory.add_item(sword)
         self.test_player2.equipment_manager.equip(sword, inventory_index=0)
         assert self.test_player2.equipment_manager.is_equipped("Steel Sword"), "Failed to equip sword."
@@ -131,7 +158,7 @@ class TestManager:
         print("Equipment tests passed.")
 
         print("\n--- Testing Inventory ---")
-        stackable_item = Consumable(name="Mana Potion", stackable=True, description="Restores 50 MP.", gold_cost=12, effect_type="restore_mp", effect_value=50)
+        stackable_item = save_manager.create_item(2)  # Mana Potion
         self.test_player2.inventory.add_item(stackable_item, count=98)  # Add near max
         self.test_player2.inventory.add_item(stackable_item, count=5)  # Exceed stack max
         assert len(self.test_player2.inventory.items) > 1, "Failed to create a new stack for overflow."
@@ -219,9 +246,9 @@ class TestManager:
         player = self.test_player3
 
         # Modify player state
-        player.stats.modify_stat({"strength": 5})
-        player.inventory.add_item(save_manager.create_item("Health Potion"), count=3)
-        player.equipment_manager.equip(save_manager.create_item("Steel Sword"))
+        player.stats.modify_stats([{"strength": 5}])
+        player.inventory.add_item(save_manager.create_item(1), count=3)
+        player.equipment_manager.equip(save_manager.create_item(3))
 
         # Save the game
         save_manager.save_game(player)
@@ -231,9 +258,9 @@ class TestManager:
             saved_data = json.load(f)
         assert saved_data["stats"]["explicit_stats"]["strength"] == 20
         assert len(saved_data["inventory"]) == 1
-        assert saved_data["inventory"][0]["name"] == "Health Potion"
+        assert saved_data["inventory"][0]['ref'] == 1 # code for health potion
         assert saved_data["inventory"][0]["count"] == 3
-        assert saved_data["equipment"]["weapon"] == "Steel Sword"
+        assert saved_data["equipment"]["weapon"] == 3 # code for steel sword
         print("Save test passed.")
 
         # Test loading
@@ -245,8 +272,8 @@ class TestManager:
                 "meta_info": {"day": 5, "location": 2},
             },
             "flags": {"defeated_dragon": True},
-            "inventory": [{"name": "Health Potion", "count": 5}],
-            "equipment": {"weapon": "Steel Sword"}
+            "inventory": [{"ref": 1, "count": 5}],
+            "equipment": {"weapon": 3}
         }
 
         with open(dummy_save_file, "w") as f:
@@ -258,7 +285,7 @@ class TestManager:
         save_manager.load_game(player)
 
         # Verify loaded player state
-        assert player.stats.explicit_stats["strength"] == 15
+        assert player.stats.explicit_stats["strength"] == 15, f"Failed to load strength stat. (current = {player.stats.explicit_stats['strength']})"
         assert player.stats.meta_info["day"] == 5
         assert player.stats.resources["hp"] == 52
         assert player.flags.check_flag("defeated_dragon") is True

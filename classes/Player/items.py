@@ -6,7 +6,7 @@ if TYPE_CHECKING:
 
 
 class Item:
-    def __init__(self, name, stackable=False, description="", gold_cost=0, count=1):
+    def __init__(self, ref:int, name:str, stackable=False, description="", gold_cost=0, count=1):
         """
         Base class for all items.
         :param name: Name of the item.
@@ -14,6 +14,7 @@ class Item:
         :param description: A brief description of the item.
         :param value: The item's monetary value.
         """
+        self.ref = ref
         self.name = name
         self.count = count
         self.stackable = stackable
@@ -21,40 +22,45 @@ class Item:
         self.gold_cost = gold_cost
 
     @staticmethod
-    def create_item(name:str, data: dict) -> Item:
+    def create_item(reference:int, data: dict) -> Item:
         """
         Factory method to create an item based on the data dictionary.
         :param data: A dictionary containing item properties.
         :return: An instance of Item or its subclasses.
         """
-        item_type = data.get("type")
+        print(reference)
+        item = data[str(reference)]
+        item_type = item["type"]
         if item_type == "Consumable":
             return Consumable(
-                name=name,
-                stackable=data["stackable"],
-                description=data["description"],
-                gold_cost=data["gold_cost"],
-                effect_type=data["effect_type"],
-                effect_value=data.get("effect_value", 0),
-                status_effect=data.get("status_effect", None),
+                ref=reference,
+                name=item["name"],
+                stackable=item["stackable"],
+                description=item["description"],
+                gold_cost=item["gold_cost"],
+                effect_type=item["effect_type"],
+                effect_value=item.get("effect_value", 0),
+                status_effect=item.get("status_effect", None),
             )
         elif item_type == "Equipment":
             return Equipment(
-                name=name,
-                stackable=data["stackable"],
-                description=data["description"],
-                gold_cost=data["gold_cost"],
-                slot=data["slot"],
-                stats=data["stats"],
-                required_stats=data.get("required_stats", {}),
+                ref=reference,
+                name=item["name"],
+                stackable=item["stackable"],
+                description=item["description"],
+                gold_cost=item["gold_cost"],
+                slot=item["slot"],
+                stats=item["stats"],
+                required_stats=item.get("required_stats", {}),
             )
         elif item_type == "PlotItem":
             return PlotItem(
-                name=name,
-                stackable=data["stackable"],
-                description=data["description"],
-                gold_cost=data["gold_cost"],
-                quest_name=data["quest_name"],
+                ref=reference,
+                name=item["name"],
+                stackable=item["stackable"],
+                description=item["description"],
+                gold_cost=item["gold_cost"],
+                quest_name=item["quest_name"],
             )
         else:
             raise ValueError(f"Unknown item type: {item_type}")
@@ -80,17 +86,17 @@ class Item:
 #########################################################################################
 
 class Consumable(Item):
-    def __init__(self, name, stackable, description, gold_cost, effect_type, effect_value=0, status_effect=None):
+    def __init__(self, ref, name, stackable, description, gold_cost, effect_type, effect_value, status_effect=None):
         """
         Consumable items with diverse effects.
         :param effect_type: The type of effect ("restore_hp", "restore_mp", "remove_status", "apply_status").
         :param effect_value: The magnitude of the effect (e.g., amount of HP restored).
         :param status_effect: A StatusEffect object to apply, if applicable.
         """
-        super().__init__(name, stackable=stackable, description=description, gold_cost=gold_cost)
+        super().__init__(ref, name, stackable=stackable, description=description, gold_cost=gold_cost)
         self.effect_type:str = effect_type  # "restore_hp", "restore_mp", etc.
         self.effect_value:int = effect_value
-        self.status_effect:StatusEffect = status_effect
+        self.status_effect:str = status_effect
 
     def use_item(self, player:Player)->None:
         """
@@ -104,14 +110,9 @@ class Consumable(Item):
             player.stats.modify_mp(self.effect_value)
             print(f"{self.name} restored {self.effect_value} MP")
         elif self.effect_type == "remove_status" and self.status_effect:
-            if player.stats.status_manager.has_effect(self.status_effect.name):
-                effect_to_remove = next(
-                    (e for e in player.stats.status_manager.effects if e.name == self.status_effect.name), None
-                )
-                if effect_to_remove: 
-                    effect_to_remove.remove_effect(player.stats)
-                    player.stats.status_manager.effects.remove(effect_to_remove)
-                    print(f"{self.name} removed {effect_to_remove.name}.")
+            if player.stats.status_manager.has_effect(self.status_effect):
+                player.stats.status_manager.remove_effect(self.status_effect, player)
+                print(f"{self.name} removed {self.status_effect}.")
             else:
                 print(f"{self.name} had no effect. {player.name} does not have {self.status_effect.name}.")
         elif self.effect_type == "apply_status" and self.status_effect:
@@ -131,17 +132,17 @@ class Consumable(Item):
         if self.effect_type == "restore_mp" and player.stats.resources["mp"] >= player.stats["max_mp"]:
             return False  # Cannot use if MP is full
         if self.effect_type == "remove_status" and self.status_effect:
-            return player.stats.status_manager.has_effect(self.status_effect.name)
+            return player.stats.status_manager.has_effect(self.status_effect)
         return True
     
 #########################################################################################
 class PlotItem(Item):
-    def __init__(self, name, stackable, description, gold_cost, quest_name):
+    def __init__(self, ref, name, stackable, description, gold_cost, quest_name):
         """
         Plot items, usually for quests or story progression.
         :param quest_name: The name of the quest this item is tied to.
         """
-        super().__init__(name, stackable=stackable|False, description=description, gold_cost=gold_cost)
+        super().__init__(ref, name, stackable=stackable|False, description=description, gold_cost=gold_cost)
         self.quest_name = quest_name
 
     def use_item(self, target):
@@ -159,17 +160,17 @@ class PlotItem(Item):
 
 #########################################################################################
 class Equipment(Item):
-    def __init__(self, name, stackable, description, gold_cost, slot, stats, required_stats=None):
+    def __init__(self, ref, name, stackable, description, gold_cost, slot, stats: list[dict[str,int]]=[{}], required_stats:list[dict[str, int]]=[{}]):
         """
         Equipment items like weapons or armor.
         :param slot: The equipment slot (e.g., "weapon", "armor").
-        :param stats: A dictionary of stat modifiers (e.g., {"strength": 5, "agility": 2}).
-        :param required_stats: Minimum stats required to equip the item (e.g., {"strength": 10}).
+        :param stats: A list of dictionariues of stat modifiers (e.g., [{"strength": 5}, {"agility": 2}]).
+        :param required_stats: A list of minimum stats required to equip the item (e.g., [{"strength": 10}]).
         """
-        super().__init__(name, stackable=stackable|False, description=description, gold_cost=gold_cost)
+        super().__init__(ref, name, stackable=stackable|False, description=description, gold_cost=gold_cost)
         self.slot = slot
-        self.stats = stats or {}  # Default to an empty dict if not provided
-        self.required_stats = required_stats or {}  # Default to an empty dict if not provided
+        self.stats = stats # Default to an empty dict if not provided
+        self.required_stats = required_stats  # Default to an empty dict if not provided
 
     def is_usable(self, player: Player)->bool:
         """
@@ -177,12 +178,13 @@ class Equipment(Item):
         :param player: The player attempting to equip the item.
         :return: True if the player meets the required stats, otherwise False.
         """
-        for stat, required_value in self.required_stats.items():
-            if player.stats.explicit_stats.get(stat, 0) < required_value:
-                print(f"Cannot equip {self.name}. {stat.capitalize()} {required_value} required. (current stat is {player.stats.explicit_stats.get(stat, 0)})")
-                return False
+        for stat_requirement in self.required_stats:
+            for stat, required_value in stat_requirement.items():  # Iterate over items
+                if player.stats.explicit_stats.get(stat, 0) < required_value:
+                    print(f"Cannot equip {self.name}. {stat.capitalize()} {required_value} required. (current stat is {player.stats.explicit_stats.get(stat, 0)})")
+                    return False
         return True
-
+        
     def use_item(self, player:Player):
         """
         Attempt to equip the item to the proper slot.

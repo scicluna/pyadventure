@@ -10,15 +10,7 @@ class StructuredEvent(TypedDict):
     choices: list[str]
 
 class Event:
-    def __init__(
-        self,
-        reference_number: int,
-        name: str,
-        event_text: str,
-        choices: list[Choice],
-        background_img: str,
-        background_music: str,
-    ):
+    def __init__(self,reference_number: int,name: str,event_text: str,choices: list[Choice],background_img: str,background_music: str,):
         """
         Represents a game event with text, choices, and multimedia.
         :param reference_number: A unique identifier for the event.
@@ -35,6 +27,21 @@ class Event:
         self.background_img = background_img
         self.background_music = background_music
 
+    @staticmethod
+    def create_event(reference:int, data: dict):
+        """
+        Factory method to create an event based on the data dictionary.
+        :param data: A dictionary containing event properties.
+        :return: An instance of Event.
+        """
+        return Event(
+            name=data[reference]["name"],
+            event_text=data[reference]["event_text"],
+            choices=[Choice.create_choice(choice) for choice in data[reference]["choices"]],
+            background_img=data[reference]["background_img"],
+            background_music=data[reference]["background_music"],
+        )
+
     def get_available_choices(self, player:Player) -> list[Choice]:
             """
             Filters the choices based on player attributes, inventory, flags, etc.
@@ -43,18 +50,9 @@ class Event:
             """
             return [choice for choice in self.choices if choice.is_available(player)]
     
-    def display_event(self, player:Player) -> dict:
-        """
-        Returns the event details and available choices for display.
+    def display_event(self, player:Player) -> StructuredEvent:
+        """Returns a dictionary representation of the event.
         :param player: The player object to evaluate choice conditions.
-        :return: A dictionary with event details and filtered choices.
+        :return: A dictionary representation of the event.
         """
-        available_choices = self.get_available_choices(player)
-        structured_dict: StructuredEvent =  {
-            "name": self.name,
-            "event_text": self.event_text,
-            "background_img": self.background_img,
-            "background_music": self.background_music,
-            "choices": [choice.text for choice in available_choices],
-        }
-        return structured_dict
+        ...

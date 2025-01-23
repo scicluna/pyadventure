@@ -58,7 +58,7 @@ class EquipmentManager:
             self.equipped_items[item.slot] = None  # Temporarily unequip the replaced item
 
             # Remove the stats of the replaced item
-            self.player.stats.modify_stat({stat: -value for stat, value in replaced_item.stats.items()})
+            self.player.stats.modify_stats([{stat: -value for stat, value in item.items()} for item in replaced_item.stats])
 
             # Add the replaced item back to the inventory at the same index
             if inventory_index is not None:
@@ -72,8 +72,9 @@ class EquipmentManager:
         self.equipped_items[item.slot] = item
         print(f"Equipped {item.name} in the {item.slot} slot.")
 
+        print(item.stats)
         # Apply the stats of the newly equipped item
-        self.player.stats.modify_stat(item.stats)
+        self.player.stats.modify_stats(item.stats)
 
     def unequip(self, slot):
         """
@@ -95,7 +96,8 @@ class EquipmentManager:
 
         # Remove the stats of the unequipped item
         # Multiply by -1 to reverse the stat effects
-        self.player.stats.modify_stat({stat: -value for stat, value in item.stats.items()})
+        print("REMOVING STATS")
+        self.player.stats.modify_stats([(-1 * stat, value) for stat, value in item.stats.items()])
 
         # Return the unequipped item to inventory
         self.player.inventory.add_item(item)

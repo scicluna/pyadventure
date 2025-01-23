@@ -1,20 +1,52 @@
 {
-    "Steel Sword": {
+    "3": {
+        "name": "Steel Sword",
         "type": "Equipment",
         "stackable": false,
         "description": "A sturdy iron sword.",
         "gold_cost": 100,
         "slot": "weapon",
-        "stats": {"strength": 5},
-        "required_stats": {"strength": 10}
+        "stats": [{"strength": 5}],
+        "required_stats": [{"strength": 10}]
     },
-    "Leather Armor": {
+    "4": {
+        "name": "Leather Armor",
         "type": "Equipment",
         "stackable": false,
         "description": "Light armor made of leather.",
         "gold_cost": 75,
         "slot": "armor",
-        "stats": {"stamina": 3},
-        "required_stats": {"stamina": 8}
+        "stats": [{"stamina": 3}, {"strength": 5}],
+        "required_stats": [{"stamina": 8}]
+    },
+    "8": {
+        "name": "Iron Armor",
+        "type": "Equipment",
+        "stackable": false,
+        "description": "Heavy iron armor.",
+        "gold_cost": 150,
+        "slot": "armor",
+        "stats": [{"stamina": 5}],
+        "required_stats": [{"stamina": 10}]
+    },
+    "9": {
+        "name": "Iron Shield",
+        "type": "Equipment",
+        "stackable": false,
+        "description": "A sturdy iron shield.",
+        "gold_cost": 80,
+        "slot": "weapon",
+        "stats": [{"stamina": 5}],
+        "required_stats": [{"stamina": 10}]
+    },
+    "10":{
+        "name": "Heavy Armor",
+        "type": "Equipment",
+        "stackable": false,
+        "description": "Requires high stamina.",
+        "gold_cost": 200,
+        "slot": "armor",
+        "stats": [{"stamina": 10}],
+        "required_stats": [{"stamina": 15}]
     }
 }

@@ -1,7 +1,9 @@
 from __future__ import annotations
 from typing import TYPE_CHECKING
+
 if TYPE_CHECKING:
     from classes.Player.stats import Stats
+    from classes.Player.player import Player
 
 
 class StatusEffect:
@@ -86,9 +88,17 @@ class StatusManager:
 
         # Recalculate derived stats after adding the effect
         stats.recalculate_derived_stats()
-
-
-
+    
+    def remove_effect(self, status_name:str, player:Player):
+        """Remove a specific status effect by name."""
+        for effect in self.effects:
+            if effect.name == status_name:
+                effect.remove_effect(player.stats)
+                self.effects.remove(effect)
+                print(f"{effect.name} has been removed.")
+                return
+        print(f"{status_name} not found.")
+        
     def update_effects(self, stats: Stats)->None:
         """Update all effects, removing expired ones and applying damage."""
         expired_effects = []
